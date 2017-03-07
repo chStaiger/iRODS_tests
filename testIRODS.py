@@ -50,7 +50,7 @@ def testPerformance(iresource, resFile):
     with open(resFile,"wb") as out:
         csv_out=csv.writer(out)
         csv_out.writerow(["date","iresource", "client", "iget/iput", "size", "time"])
-        for row in data:
+        for row in result:
             csv_out.writerow(row)
 
 def main():

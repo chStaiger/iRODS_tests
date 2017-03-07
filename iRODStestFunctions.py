@@ -243,7 +243,7 @@ def performance(iresource):
     result = []
     for data in dataset:
         print "Put and get: ", data
-        for i in tqdm(range(100)):
+        for i in tqdm(range(10)):
             date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
             out, err, elapsed = iRODSput(iresource, data, collection+"/"+os.path.basename(data))
             if not checkIntegrity(collection+"/"+os.path.basename(data), data):
