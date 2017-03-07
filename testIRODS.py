@@ -106,7 +106,11 @@ def main():
 
     if clean and not perform and not connect:
         print "Cleaning"
-        cleanUp()
+        #cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0"],
+        #folders = [os.environ["HOME"]+"/testdata", os.environ["HOME"]+"/getdata"])
+        colls = ["PERFORMANCE"+str(i) for i in range(10)]
+        colls.append("PERFORMANCE")
+        cleanUp(collections = colls)
     elif perform and not clean and not connect:
         print "Performance testing on resource", resource
         print "Writing results to", 
