@@ -231,6 +231,13 @@ def performanceSingleFiles(iresource, maxTimes = 10):
     """
     Tests the performance of iget and iput for single files.
     Test data needs to be stored under $HOME/testdata. The function omits subfolders. 
+    It ping-pongs the data between the unix file system and iRODS collection:
+        iput folder/data_0 --> coll/data_1
+        iget coll/data_1 --> folder/data_1
+        iput folder/data_1 --> coll/data_2
+        iget coll/data_2 --> folder/data_2
+        ...
+
     iresource:  iRODS resource
     maxTimes:   times how often the file is transferred with iput and iget.
 
