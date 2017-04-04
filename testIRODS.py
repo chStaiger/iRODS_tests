@@ -10,7 +10,7 @@
                 python testIRODS.py -p [-r <irods resource>]
 """
 
-from iRODStestFunctions import createTestData, createEnvJSON, performance, connectivity, cleanUp
+from iRODStestFunctions import createTestData, createEnvJSON, performanceSingleFiles, connectivity, cleanUp
 import csv
 import getopt
 import sys
@@ -46,10 +46,11 @@ def testPerformance(iresource, resFile):
         raise Exception("Path does not exist: " + os.path.dirname(resFile))
 
     #test performance: "irodsRescScaleout" or "irodsResc"
-    result = performance(iresource)
+    result = performanceSingleFiles(iresource)
     with open(resFile,"wb") as out:
         csv_out=csv.writer(out)
-        csv_out.writerow(["date","iresource", "client", "iget/iput", "size", "time"])
+        #(date, resource, client, iput/iget, size, real time, user time, system time)
+        csv_out.writerow(["date","iresource", "client", "iget/iput", "size", "real time", "user time", "system time"])
         for row in result:
             csv_out.writerow(row)
 
@@ -106,11 +107,10 @@ def main():
 
     if clean and not perform and not connect:
         print "Cleaning"
-        #cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0"],
-        #folders = [os.environ["HOME"]+"/testdata", os.environ["HOME"]+"/getdata"])
         colls = ["PERFORMANCE"+str(i) for i in range(10)]
         colls.append("PERFORMANCE")
-        cleanUp(collections = colls)
+        print colls
+	cleanUp(collections = colls)
     elif perform and not clean and not connect:
         print "Performance testing on resource", resource
         print "Writing results to", 

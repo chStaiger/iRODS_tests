@@ -39,23 +39,30 @@ def createTestData():
     # Create data
     #100MB
     print "Write sample100M.txt"
-    with open(testdata+"/sample100M.txt", "wb") as f:
-        f.truncate(1024 * 1024 * 100)
+    with open(testdata+"/sample100M.txt_0", "wb") as f:
+        f.write(os.urandom(1024 * 1024 * 100))
     
     #1GB
     print "Write sample1G.txt"
-    with open(testdata+"/sample1G.txt", "wb") as f:
-        f.truncate(1024 * 1024 * 1024)
+    with open(testdata+"/sample1G.txt_0", "wb") as f:
+        f.write(os.urandom(1024 * 1024 * 1024)) 
     
     #2GB
     print "Write sample2G.txt"
-    with open(testdata+"/sample2G.txt", "wb") as f:
-        f.truncate(1024 * 1024 * 1024 * 2)
- 
+    with open(testdata+"/sample2G.txt_0", "wb") as f:
+        f.write(os.urandom(1024 * 1024 * 1024 * 2))
+
     #5GB
     print "Write sample5G.txt"
-    with open(testdata+"/sample5G.txt", "wb") as f:
-        f.truncate(1024 * 1024 * 1024 * 5)
+    with open(testdata+"/sample5G.txt_0", "wb") as f:
+        f.write(os.urandom(1024 * 1024 * 1024 * 5))
+
+    #Folder of 100*10MB files
+    print "Create 10MB*100"
+    os.makedirs(testdata+"/Coll10MB_0")
+    for i in range(100):
+        with open(testdata+"/Coll10MB_0/sample10MB_"+str(i)+".txt", "wb") as f:
+            f.write(os.urandom(1024 * 1024 * 10))
 
     print "%sSUCCESS Test data created.%s" %(GREEN, DEFAULT)
 
@@ -123,26 +130,26 @@ def iRODSput(iresource, source, idestination):
     source:     path to local file to upload, must be a file, accepts absolut and relative paths
     idestination:   iRODS destination, accepts absolut and relative collection paths
     """
-    start = timer()
-    p = subprocess.Popen(["iput -K -f -R "+iresource+" "+source+" "+idestination],
+    p = subprocess.Popen(["time iput -r -K -f -R "+iresource+" "+source+" "+idestination],
         shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    elapsed = timer() - start
+
     out, err = p.communicate()
-    return (out, err, elapsed)
+    elapsed = [i.split("\t")[1] for i in err.strip("\n").split("\n")]
+    return (out, err, elapsed[0], elapsed[1], elapsed[2])
 
 def iRODSget(iresource, isource, destination):
     """
-    Wrapper for iRODS iput.
+    Wrapper for iRODS iget.
     iresource:  iRODS resource name
     source:     path to local destination file, must be a file, accepts absolut and relative paths
     idestination:   iRODS source, accepts absolut and relative collection paths
     """
-    start = timer()
-    p = subprocess.Popen(["iget -K -f -R "+iresource+" "+isource+" "+destination],
+    p = subprocess.Popen(["time iget -r -K -f -R "+iresource+" "+isource+" "+destination],
         shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    elapsed = (timer() - start)
+
     out, err = p.communicate()
-    return (out, err, elapsed)
+    elapsed = [i.split("\t")[1] for i in err.strip("\n").split("\n")]
+    return (out, err, elapsed[0], elapsed[1], elapsed[2])
 
 def checkIntegrity(iRODSfile, localFile):
     """
@@ -160,9 +167,9 @@ def checkIntegrity(iRODSfile, localFile):
     return irodschksum == checksum
 
 def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0"], 
-        folders = [os.environ["HOME"]+"/testdata", os.environ["HOME"]+"/getdata"]):
+        folders = [os.environ["HOME"]+"/testdata"]):
     """
-    Removes iRODS collections and testdata.
+    Removes iRODS collections and replicated testdata.
     collections:    List of absolut or relative collection names. Default ["CONNECTIVITY", "PERFORMANCE"].
     folders:        List of local folders. Default [os.environ["HOME"]+"/testdata"]
     """
@@ -172,10 +179,16 @@ def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0"],
             shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p = subprocess.Popen(["irmtrash"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    print "Remove folders"
+    print "Remove duplicate data"
+    data = []
     for folder in folders:
-        if os.path.exists(folder):
-            shutil.rmtree(folder)    
+        data.extend([folder+"/" + f
+            for f in os.listdir(folder) if not f.endswith("_0")])
+    for d in data:
+        if os.path.isfile(d):
+            os.remove(d)
+        else:
+            os.rmdir(d)
 
     print "%sClean up finished. %s" %(GREEN, DEFAULT)
 
@@ -214,23 +227,21 @@ def connectivity(iresource, data=os.environ["HOME"]+"/testdata/sample100M.txt"):
     print GREEN, "SUCCESS", result, DEFAULT
     return (date, iresource, os.uname()[1], "iput", "100M", elapsed)
     
-def performance(iresource):
+def performanceSingleFiles(iresource, maxTimes = 10):
     """
-    Tests the performance of iget and iput.
-    iresource: iRODS resource
+    Tests the performance of iget and iput for single files.
+    Test data needs to be stored under $HOME/testdata. The function omits subfolders. 
+    iresource:  iRODS resource
+    maxTimes:   times how often the file is transferred with iput and iget.
 
-    Returns a list of tuples: [(date, resource, client, iput/iget, size, time)]
+    Returns a list of tuples: [(date, resource, client, iput/iget, size, real time, user time, system time)]
     """
 
     # Make sure you are in /home/<user>
     os.chdir(os.environ["HOME"])
 
-    # Create download folder for iget
-    if not os.path.isdir(os.environ["HOME"]+"/getdata"):
-        os.mkdir(os.environ["HOME"]+"/getdata") 
-    destFolder = os.environ["HOME"]+"/getdata"
-
-    dataset = [os.environ["HOME"]+"/testdata/" + f for f in os.listdir(os.environ["HOME"]+"/testdata")]
+    dataset = [os.environ["HOME"]+"/testdata/" + f 
+        for f in os.listdir(os.environ["HOME"]+"/testdata") if os.path.isfile(os.environ["HOME"]+"/testdata/" + f)]
     for data in dataset:
         # Verify that data is there.
         if not os.path.isfile(data):
@@ -239,26 +250,34 @@ def performance(iresource):
 
     print "Create iRODS Collection PERFORMANCE"
     collection = iRODScreateColl("PERFORMANCE")
-    # Put and get data from iRODS using 1GB, 2GB and 5GB
+    # Put and get data from iRODS using 1GB, 2GB and 5GB, store data with new file name "+_str(i)"
     result = []
     for data in dataset:
+        data = data.split("_")[0] # ge base name of the file --> no "_str(i)"
         print "Put and get: ", data
-        for i in tqdm(range(10)):
+        for i in tqdm(range(1, maxTimes)):
             date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-            out, err, elapsed = iRODSput(iresource, data, collection+"/"+os.path.basename(data))
-            if not checkIntegrity(collection+"/"+os.path.basename(data), data):
+            print "iput", data+"_"+str(i-1), collection+"/"+os.path.basename(data)+"_"+str(i)
+            out, err, real, user, sys = iRODSput(iresource, data+"_"+str(i-1), 
+                collection+"/"+os.path.basename(data)+"_"+str(i))
+            print "integrity", collection+"/"+os.path.basename(data+"_"+str(i)), data+"_"+str(i-1)
+            if not checkIntegrity(collection+"/"+os.path.basename(data+"_"+str(i)), data+"_"+str(i-1)):
                 print "%sERROR Checksums do not match.%s" %(RED, DEFAULT)
                 raise Exception("iRODS Data integrity")
             else:
-                result.append((date, iresource, os.uname()[1], "iput", os.path.basename(data).split('.')[0][6:], elapsed))
+                print "Integrity done"
+                result.append((date, iresource, os.uname()[1], "iput", os.path.basename(data).split('.')[0][6:], real, user, sys))
             
             date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-            out, err, elapsed = iRODSget(iresource, collection+"/"+os.path.basename(data), 
-                destFolder+"/"+os.path.basename(data))
-            if not checkIntegrity(collection+"/"+os.path.basename(data), destFolder+"/"+os.path.basename(data)):
+            print "iget", collection+"/"+os.path.basename(data)+"_"+str(i), data+"_"+str(i)
+            out, err, real, user, sys = iRODSget(iresource, collection+"/"+os.path.basename(data+"_"+str(i)), 
+                data+"_"+str(i))
+            print "integrity", collection+"/"+os.path.basename(data+"_"+str(i)), data+"_"+str(i)
+            if not checkIntegrity(collection+"/"+os.path.basename(data)+"_"+str(i), data+"_"+str(i)): 
                 print "%sERROR Checksums do not match.%s" %(RED, DEFAULT)
                 raise Exception("iRODS Data integrity")
             else:
-                result.append((date, iresource, os.uname()[1], "iget", os.path.basename(data).split('.')[0][6:], elapsed))
+                print "Integrity done"
+                result.append((date, iresource, os.uname()[1], "iget", os.path.basename(data).split('.')[0][6:], real, user, sys))
     
     return result
