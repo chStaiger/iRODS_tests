@@ -23,7 +23,7 @@ DEFAULT = "\033[0m"
 
 def testConnectivity(iresource):
     #create test data
-    createTestData()
+    #createTestData()
     #setup iRODS environment
     uname   = "c.staiger"
     host    = "geohealth.data.uu.nl"
@@ -53,6 +53,7 @@ def testPerformance(iresource, resFile):
         csv_out.writerow(["date","iresource", "client", "iget/iput", "size", "real time", "user time", "system time"])
         for row in result:
             csv_out.writerow(row)
+    
 
 def main():
     """
@@ -113,11 +114,19 @@ def main():
 	cleanUp(collections = colls)
     elif perform and not clean and not connect:
         print "Performance testing on resource", resource
+        if os.environ["TMPDIR"] == "":
+            testdata = os.environ["HOME"]+"/testdata"
+        else:
+            testdata = os.environ["TMPDIR"]+"/testdata"
         print "Writing results to", 
         testPerformance(resource, out)
     elif connect and not clean and not perform:
         print "Connection test on resource", resource
-        testConnectivity(resource)
+        if os.environ["TMPDIR"] == "":
+            testdata = os.environ["HOME"]+"/testdata"
+        else:
+            testdata = os.environ["TMPDIR"]+"/testdata"
+        testConnectivity(resource, testdata)
     else:
         print "%sOption combination not supported. For help use --help%s"  %(RED, DEFAULT)
 

@@ -21,8 +21,8 @@ def readData(files):
         dataFrames.append(pd.read_csv(csvFile))
 
     #stack the dataframes
-    data = pd.concat(dataFrames, ignore_index=True)
-    data.reset_index(inplace=True, drop=True)
+    data = pd.concat(dataFrames)
+
     #reformat the columns real time, user time, system time: XmX.Xs --> X (in seconds)
     data['real time'] = data['real time'].apply(lambda x: 
         pd.to_numeric(x.split("m")[0])*60+pd.to_numeric(x.split("m")[1].strip('s')))
@@ -33,11 +33,8 @@ def readData(files):
 
     #reformat the client column
     #cartesius workernodes start with 'tcn'
-    for i in range(0, len(data['client'])):
-        if data['client'][i].startswith('tcn'):
-            data['client'][i] = 'cartesius'
-        elif data['client'][i] == 'elitebook':
-            data['client'][i] = 'workstation'
+    tmp = ['cartesius' for i in data['client'] if i.startswith('tcn')]
+    data['client'] = tmp
 
     return data
 
@@ -48,30 +45,14 @@ def plotData(dataFrame):
     dfIPUT = dataFrame[dataFrame['iget/iput']=='iput']
     dfIGET = dataFrame[dataFrame['iget/iput']=='iget']
     
+    fig, axes = plt.subplots(nrows=len(dataFrame['client'].unique()), ncols=len(dataFrame['iresource'].unique()), figsize=(6, 6), sharey=True)    
+    stats = cbook.boxplot_stats(dfIPUT, labels=labels, bootstrap=10000)
+
     # make single plots for resources
     for resc in dataFrame['iresource'].unique():
         # make single plots for clients
         for client in dataFrame['client'].unique():
             # plot the times as boxplot
-            idx = (dataFrame['iresource']==resc) & (dataFrame['client']==client)
-            data_mean   = dfIPUT[idx].groupby('size').mean()
-            data_mean.plot.bar()
-            plt.xlabel('size')
-            plt.ylabel('seconds')
-            plt.title(resc+' - iput from '+client)
-            plt.savefig(resc+'-iput-'+client+'.png')
-
-            data_mean   = dfIGET[idx].groupby('size').mean()
-            data_mean.plot.bar()
-            plt.xlabel('size')
-            plt.ylabel('seconds')
-            plt.title(resc+' - iget from '+client)
-            plt.savefig(resc+'-iget-'+client+'.png')
-
-files = ['singeFilePerfTest_cart0.csv', 'singeFilePerfTest_cart1_test.csv', 'singeFilePerfTest_cart2_test.csv', 'singeFilePerfTest_cart3_test.csv', 'results-1_rob.csv', 'results-2_rob.csv', 'results-3_rob.csv']
-
-dataFrame = readData(files)
-plotData(dataFrame)
-
+             
 
 

@@ -24,11 +24,15 @@ DEFAULT = "\033[0m"
 def createTestData():
     """
     Creates test data. 
-    Folder: /home/<usr>/testdata
+    Folder: /home/<usr>/testdata or /<TMPDIR>/testdata ; TMPDIR is a shell variable
     Files:  100MB, 1GB, 2GB, 5GB
+    Folders: 100 x 10MB
     """
-    
-    testdata = os.environ["HOME"]+"/testdata"
+    if os.environ["TMPDIR"] == "": 
+        testdata = os.environ["HOME"]+"/testdata"
+    else:
+        testdata = os.environ["TMPDIR"]+"/testdata"
+
     # Check whether test folder already exists. If not create one
     if os.path.isdir(testdata):
         print testdata, "exists"
@@ -173,6 +177,9 @@ def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0"],
     collections:    List of absolut or relative collection names. Default ["CONNECTIVITY", "PERFORMANCE"].
     folders:        List of local folders. Default [os.environ["HOME"]+"/testdata"]
     """
+    if os.environ["TMPDIR"] != "":
+        folders.append(os.environ["TMPDIR"]+"/testdata")
+
     print "Remove iRODS collections"
     for coll in collections:
         p = subprocess.Popen(["irm -r "+coll],
@@ -244,11 +251,15 @@ def performanceSingleFiles(iresource, maxTimes = 10):
     Returns a list of tuples: [(date, resource, client, iput/iget, size, real time, user time, system time)]
     """
 
-    # Make sure you are in /home/<user>
-    os.chdir(os.environ["HOME"])
+    # If there is a tmp dir, use that for transferring the data
+    if os.environ["TMPDIR"] == "":
+        testdata = os.environ["HOME"]+"/testdata"
+    else:
+        testdata = os.environ["TMPDIR"]+"/testdata"
 
-    dataset = [os.environ["HOME"]+"/testdata/" + f 
-        for f in os.listdir(os.environ["HOME"]+"/testdata") if os.path.isfile(os.environ["HOME"]+"/testdata/" + f)]
+    dataset = [testdata+"/" + f 
+        for f in os.listdir(testdata) if os.path.isfile(testdata+"/" + f)]
+
     for data in dataset:
         # Verify that data is there.
         if not os.path.isfile(data):
