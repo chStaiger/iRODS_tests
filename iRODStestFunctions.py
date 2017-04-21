@@ -170,7 +170,7 @@ def checkIntegrity(iRODSfile, localFile):
 
     return irodschksum == checksum
 
-def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0"], 
+def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0", "PERFORMANCEC0"], 
         folders = [os.environ["HOME"]+"/testdata"]):
     """
     Removes iRODS collections and replicated testdata.
@@ -298,4 +298,60 @@ def performanceSingleFiles(iresource, maxTimes = 10):
                 print "Integrity done"
                 result.append((date, iresource, os.uname()[1], "iget", os.path.basename(data).split('.')[0][6:], real, user, sys))
     
+    return result
+
+def performanceCollections(iresource, maxTimes = 10):
+    """
+    Tests the performance of iget and iput for single files.
+    Test data needs to be stored under $HOME/testdata. The function omits subfolders.
+    It ping-pongs the data collections between the unix file system and iRODS collection:
+        iput folder/data_0/ --> coll/data_1/
+        iget coll/data_1/ --> folder/data_1/
+        iput folder/data_1/ --> coll/data_2/
+        iget coll/data_2/ --> folder/data_2/
+        ...
+
+    iresource:  iRODS resource
+    maxTimes:   times how often the file is transferred with iput and iget.
+
+    Returns a list of tuples: [(date, resource, client, iput/iget, size, real time, user time, system time)]
+    """
+
+    # If there is a tmp dir, use that for transferring the data
+    if os.environ["TMPDIR"] == "":
+        testdata = os.environ["HOME"]+"/testdata"
+    else:
+        testdata = os.environ["TMPDIR"]+"/testdata"
+
+    dataset = [testdata+"/" + f
+        for f in os.listdir(testdata) if os.path.isdir(testdata+"/" + f)]
+
+    for data in dataset:
+        # Verify that data is not empty and data is there.
+        files = [f for f in os.listdir(data) if os.path.isfile(data+"/" + f)]    
+        if len(files) == 0:
+            print RED, "ERROR collection empty:", data, DEFAULT
+            raise Exception("No files in data collection.")
+
+    print "Create iRODS Collection PERFORMANCEC"
+    collection = iRODScreateColl("PERFORMANCEC")
+
+    result = []
+    for data in dataset:
+        data = data.split("_")[0] # ge base name of the folder --> no "_str(i)"
+        print "Put and get: ", data
+        for i in tqdm(range(1, maxTimes)):
+            date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+            print "iput -r", data+"_"+str(i-1), collection+"/"+os.path.basename(data)+"_"+str(i)
+            out, err, real, user, sys = iRODSput(iresource, data+"_"+str(i-1),
+                collection+"/"+os.path.basename(data)+"_"+str(i))
+            result.append((date, iresource, os.uname()[1], "iput", os.path.basename(data).split('.')[0][4:], real, user, sys))
+
+            date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+            print "iget -r", collection+"/"+os.path.basename(data)+"_"+str(i), data+"_"+str(i)
+            out, err, real, user, sys = iRODSget(iresource, collection+"/"+os.path.basename(data+"_"+str(i)),
+                data+"_"+str(i))
+            result.append((date, iresource, os.uname()[1], "iget", os.path.basename(data).split('.')[0][4:], real, user, sys))
+
+    #TODO:Integrity checks
     return result
