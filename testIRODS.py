@@ -11,6 +11,7 @@
 """
 
 from iRODStestFunctions import createTestData, createEnvJSON, performanceSingleFiles, connectivity, cleanUp
+from iRODStestFunctions import performanceCollections
 import csv
 import getopt
 import sys
@@ -54,6 +55,22 @@ def testPerformance(iresource, resFile):
         for row in result:
             csv_out.writerow(row)
     
+def testPerformanceDir(iresource, resFile):
+    #createTestData()
+    #setup iRODS environment
+    uname   = "c.staiger"
+    host    = "geohealth.data.uu.nl"
+    zone    = "nluu11p"
+    createEnvJSON(uname, host, zone)
+
+    result = performanceCollections(iresource)
+    with open(resFile,"wb") as out:
+        csv_out=csv.writer(out)
+        #(date, resource, client, iput/iget, size, real time, user time, system time)
+        csv_out.writerow(["date","iresource", "client", "iget/iput", "size", "real time", "user time", "system time"])
+        for row in result:
+            csv_out.writerow(row)
+
 
 def main():
     """
@@ -70,7 +87,7 @@ def main():
     """
     # parse command line options
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hr:s:cpo", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hr:s:cpod", ["help"])
     except getopt.error, msg:
         print msg
         print "for help use --help"
@@ -85,6 +102,7 @@ def main():
     perform     = False
     resource    = "defaultResc"
     out         = os.environ["HOME"]+"/results.csv"
+    coll        = False
 
     for o, a in opts:
         print o, a
@@ -102,18 +120,29 @@ def main():
             resource = a
         elif o == "-s":
             out = a
+        elif o == "-d":
+            coll = True
         else:
             print "option unknown"
             sys.exit(2)
 
     if clean and not perform and not connect:
         print "Cleaning"
-        colls = ["PERFORMANCE"+str(i) for i in range(10)]
-        colls.append("PERFORMANCE")
+        colls = ["PERFORMANCE"+str(i) for i in range(10)]+
+            ["PERFORMANCEC"+str(i) for i in range(10)]
+        colls.append("PERFORMANCEC0")
         print colls
-	cleanUp(collections = colls)
+	    cleanUp(collections = colls)
+    elif coll and perform and not clean and not connect:
+        print "[COLL] Performance testing on resource", resource
+        if os.environ["TMPDIR"] == "":
+            testdata = os.environ["HOME"]+"/testdata"
+        else:
+            testdata = os.environ["TMPDIR"]+"/testdata"
+        print "Writing results to",
+        testPerformanceDir(resource, out)
     elif perform and not clean and not connect:
-        print "Performance testing on resource", resource
+        print "[SINGLE FILES] Performance testing on resource", resource
         if os.environ["TMPDIR"] == "":
             testdata = os.environ["HOME"]+"/testdata"
         else:

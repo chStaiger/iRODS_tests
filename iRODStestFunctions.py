@@ -195,7 +195,7 @@ def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0", "PERFORMANCEC0"],
         if os.path.isfile(d):
             os.remove(d)
         else:
-            os.rmdir(d)
+            shutil.rmtree(d, ignore_errors=True)
 
     print "%sClean up finished. %s" %(GREEN, DEFAULT)
 
