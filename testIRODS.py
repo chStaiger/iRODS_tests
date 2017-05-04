@@ -84,6 +84,9 @@ def main():
         Uses by default the iRODS defaultResc as destination resource
         Writes results to /home/<user>/results.csv
                 python testIRODS.py -p [-r <irods resource>] [-s <csv file>]
+    4) Performance tests for iRODS collections
+                python testIRODS.py -p -d [-r <irods resource>] [-s <csv file>]
+
     """
     # parse command line options
     try:
