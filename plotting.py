@@ -5,6 +5,7 @@ Script to convert and plot the data collected  during the iRODS performance test
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cbook as cbook
+import os
 
 # Read in a list of outputfiles
 def readData(files):
@@ -22,6 +23,7 @@ def readData(files):
 
     #stack the dataframes
     data = pd.concat(dataFrames)
+    data = data.reset_index(drop=True)
 
     #reformat the columns real time, user time, system time: XmX.Xs --> X (in seconds)
     data['real time'] = data['real time'].apply(lambda x: 
@@ -33,26 +35,45 @@ def readData(files):
 
     #reformat the client column
     #cartesius workernodes start with 'tcn'
-    tmp = ['cartesius' for i in data['client'] if i.startswith('tcn')]
-    data['client'] = tmp
+    for c in data['client'].unique():
+        if c.startswith('tcn'):
+            data = data.replace(c, 'cartesius')
+        elif 'lisa' in c:
+            data = data.replace(c, 'lisa')
+        elif c == 'elitebook':
+            data = data.replace(c, 'workstation')
+
 
     return data
 
 
 def plotData(dataFrame):
 
-    # make single plots for iput and iget
     dfIPUT = dataFrame[dataFrame['iget/iput']=='iput']
     dfIGET = dataFrame[dataFrame['iget/iput']=='iget']
     
-    fig, axes = plt.subplots(nrows=len(dataFrame['client'].unique()), ncols=len(dataFrame['iresource'].unique()), figsize=(6, 6), sharey=True)    
-    stats = cbook.boxplot_stats(dfIPUT, labels=labels, bootstrap=10000)
-
     # make single plots for resources
     for resc in dataFrame['iresource'].unique():
         # make single plots for clients
         for client in dataFrame['client'].unique():
             # plot the times as boxplot
-             
+            idx = (dataFrame['iresource']==resc) & (dataFrame['client']==client)
+            data_mean   = dfIPUT[idx].groupby('size').mean()
+            data_mean.plot.bar()
+            plt.xlabel('size')
+            plt.ylabel('seconds')
+            plt.title(resc+' - iput from '+client)
+            plt.savefig(resc+'-iput-'+client+'.png')
+
+            data_mean   = dfIGET[idx].groupby('size').mean()
+            data_mean.plot.bar()
+            plt.xlabel('size')
+            plt.ylabel('seconds')
+            plt.title(resc+' - iget from '+client)
+            plt.savefig(resc+'-iget-'+client+'.png')
+
+files = [f for f in os.listdir("../results/") if f.endswith('.csv')]
+dataFrame = readData(files)
+plotData(dataFrame)
 
 
