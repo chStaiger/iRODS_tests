@@ -135,7 +135,7 @@ def main():
         cleanUp(collections = colls)
     elif coll and perform and not clean and not connect:
         print "[COLL] Performance testing on resource", resource
-        if os.environ["TMPDIR"] == "":
+        if "TMPDIR" not in os.environ:
             testdata = os.environ["HOME"]+"/testdata"
         else:
             testdata = os.environ["TMPDIR"]+"/testdata"
@@ -143,7 +143,7 @@ def main():
         testPerformanceDir(resource, out)
     elif perform and not clean and not connect:
         print "[SINGLE FILES] Performance testing on resource", resource
-        if os.environ["TMPDIR"] == "":
+        if "TMPDIR" not in os.environ:
             testdata = os.environ["HOME"]+"/testdata"
         else:
             testdata = os.environ["TMPDIR"]+"/testdata"
@@ -151,7 +151,7 @@ def main():
         testPerformance(resource, out)
     elif connect and not clean and not perform:
         print "Connection test on resource", resource
-        if os.environ["TMPDIR"] == "":
+        if "TMPDIR" not in os.environ:
             testdata = os.environ["HOME"]+"/testdata"
         else:
             testdata = os.environ["TMPDIR"]+"/testdata"

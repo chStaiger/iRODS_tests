@@ -28,7 +28,7 @@ def createTestData():
     Files:  100MB, 1GB, 2GB, 5GB
     Folders: 100 x 10MB
     """
-    if os.environ["TMPDIR"] == "": 
+    if "TMPDIR" not in os.environ: 
         testdata = os.environ["HOME"]+"/testdata"
     else:
         testdata = os.environ["TMPDIR"]+"/testdata"
@@ -177,7 +177,7 @@ def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0", "PERFORMANCEC0"],
     collections:    List of absolut or relative collection names. Default ["CONNECTIVITY", "PERFORMANCE"].
     folders:        List of local folders. Default [os.environ["HOME"]+"/testdata"]
     """
-    if os.environ["TMPDIR"] != "":
+    if "TMPDIR" not in os.environ:
         folders.append(os.environ["TMPDIR"]+"/testdata")
 
     print "Remove iRODS collections"
@@ -252,7 +252,7 @@ def performanceSingleFiles(iresource, maxTimes = 10):
     """
 
     # If there is a tmp dir, use that for transferring the data
-    if os.environ["TMPDIR"] == "":
+    if "TMPDIR" not in os.environ:
         testdata = os.environ["HOME"]+"/testdata"
     else:
         testdata = os.environ["TMPDIR"]+"/testdata"
@@ -318,7 +318,7 @@ def performanceCollections(iresource, maxTimes = 10):
     """
 
     # If there is a tmp dir, use that for transferring the data
-    if os.environ["TMPDIR"] == "":
+    if "TMPDIR" not in os.environ:
         testdata = os.environ["HOME"]+"/testdata"
     else:
         testdata = os.environ["TMPDIR"]+"/testdata"
