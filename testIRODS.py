@@ -56,7 +56,7 @@ def testPerformance(iresource, resFile):
             csv_out.writerow(row)
     
 def testPerformanceDir(iresource, resFile):
-    #createTestData()
+    createTestData()
     #setup iRODS environment
     uname   = "c.staiger"
     host    = "geohealth.data.uu.nl"
@@ -84,9 +84,6 @@ def main():
         Uses by default the iRODS defaultResc as destination resource
         Writes results to /home/<user>/results.csv
                 python testIRODS.py -p [-r <irods resource>] [-s <csv file>]
-    4) Performance tests for iRODS collections
-                python testIRODS.py -p -d [-r <irods resource>] [-s <csv file>]
-
     """
     # parse command line options
     try:
@@ -131,11 +128,11 @@ def main():
 
     if clean and not perform and not connect:
         print "Cleaning"
-        colls = ["PERFORMANCE"+str(i) for i in range(10)]+
-            ["PERFORMANCEC"+str(i) for i in range(10)]
+        colls = ["PERFORMANCE"+str(i) for i in range(10)]
+        colls.extend(["PERFORMANCEC"+str(i) for i in range(10)])
         colls.append("PERFORMANCEC0")
         print colls
-	    cleanUp(collections = colls)
+        cleanUp(collections = colls)
     elif coll and perform and not clean and not connect:
         print "[COLL] Performance testing on resource", resource
         if os.environ["TMPDIR"] == "":
