@@ -84,6 +84,9 @@ def main():
         Uses by default the iRODS defaultResc as destination resource
         Writes results to /home/<user>/results.csv
                 python testIRODS.py -p [-r <irods resource>] [-s <csv file>]
+    4) Performance testing trasnfers of a folder with 100x10MB files
+        python testIRODS.py -p -d -r irodsRescScaleout [-s <csv file>]
+
     """
     # parse command line options
     try:
