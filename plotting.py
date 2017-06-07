@@ -115,13 +115,14 @@ def plotDataCompute(dataFrame):
         plt.xlabel('size')
         plt.ylabel('Gbit/s')
         plt.title(resc+' - iput')
-        plt.ylim([0, 1])        
+        plt.ylim([0, 2])        
         plt.savefig(resc+'-iput-compute.png')
         
         groupedGETComp.plot.bar()
         plt.xlabel('size')
         plt.ylabel('Gbit/s')
-
+        plt.title(resc+' - iput')
+        plt.ylim([0, 2])
         plt.savefig(resc+'-iget-compute.png')
 
 def plotDataWorkstation(dataFrame):
@@ -147,14 +148,14 @@ def plotDataWorkstation(dataFrame):
         plt.xlabel('size')
         plt.ylabel('Gbit/s')
         plt.title(resc+' - iput')
-        plt.ylim([0, 1])
+        plt.ylim([0, 2])
         plt.savefig(resc+'-iput-workstation.png')
 
         groupedGETWork.plot.bar()
         plt.xlabel('size')
         plt.ylabel('Gbit/s')
         plt.title(resc+' - iget')
-        plt.ylim([0, 1])
+        plt.ylim([0, 2])
         plt.savefig(resc+'-iget-workstation.png')
 
 
