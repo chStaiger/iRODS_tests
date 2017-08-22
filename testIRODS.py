@@ -2,12 +2,17 @@
     Usage:
     1) Cleaning testdata and folders
                 python testIRODS.py -c
-    2) Testing the connection to the iRODS server via port 1247 and all data ports
+    2) Testing the connection to the iRODS server via port 1247 and all data pp
+orts
         Uses by default the iRODS defaultResc as destination resource
                 python testIRODS.py -o [-r <irods resource>]
     3) Performnace testing (takes a long time --> use screen or tmux)
         Uses by default the iRODS defaultResc as destination resource
-                python testIRODS.py -p [-r <irods resource>]
+        Writes results to /home/<user>/results.csv
+                python testIRODS.py -p [-r <irods resource>] [-s <csv file>]
+    4) Performance testing trasnfers of a folder with 100x10MB files
+        python testIRODS.py -p -d -r <irods resource> [-s <csv file>]
+
 """
 
 from iRODStestFunctions import createTestData, createEnvJSON, performanceSingleFiles, connectivity, cleanUp
@@ -26,9 +31,15 @@ def testConnectivity(iresource):
     #create test data
     #createTestData()
     #setup iRODS environment
-    uname   = "c.staiger"
-    host    = "geohealth.data.uu.nl"
-    zone    = "nluu11p"
+    #setup iRODS environment
+    #uname   = "c.staiger"
+    #host    = "geohealth.data.uu.nl"
+    #zone    = "nluu11p"
+
+    uname   = "christine"
+    host    = "pocicat.astron.nl"
+    zone    = "pocZone"
+
     createEnvJSON(uname, host, zone)
     #test connectivity: "irodsRescScaleout" or "irodsResc"
     result = connectivity(iresource)
@@ -36,11 +47,15 @@ def testConnectivity(iresource):
 
 def testPerformance(iresource, resFile):
     #create test data
-    createTestData()
+    #createTestData()
     #setup iRODS environment
-    uname   = "c.staiger"
-    host    = "geohealth.data.uu.nl"
-    zone    = "nluu11p"
+    #uname   = "c.staiger"
+    #host    = "geohealth.data.uu.nl"
+    #zone    = "nluu11p"
+
+    uname   = "christine"
+    host    = "pocicat.astron.nl"
+    zone    = "pocZone"
     createEnvJSON(uname, host, zone)
 
     if not os.path.isdir(os.path.dirname(resFile)):
@@ -56,11 +71,16 @@ def testPerformance(iresource, resFile):
             csv_out.writerow(row)
     
 def testPerformanceDir(iresource, resFile):
-    createTestData()
+    #createTestData()
     #setup iRODS environment
-    uname   = "c.staiger"
-    host    = "geohealth.data.uu.nl"
-    zone    = "nluu11p"
+    #uname   = "c.staiger"
+    #host    = "geohealth.data.uu.nl"
+    #zone    = "nluu11p"
+    
+    uname   = "christine"
+    host    = "pocicat.astron.nl"
+    zone    = "pocZone"
+
     createEnvJSON(uname, host, zone)
 
     result = performanceCollections(iresource)
@@ -134,8 +154,9 @@ def main():
         colls = ["PERFORMANCE"+str(i) for i in range(10)]
         colls.extend(["PERFORMANCEC"+str(i) for i in range(10)])
         colls.append("PERFORMANCEC0")
+        colls.extend(["CONNECTIVITY"+str(i) for i in range(10)])
         print colls
-        cleanUp(collections = colls)
+        cleanUp(collections = colls, folders = [os.environ["TMPDIR"]+"/testdata"])
     elif coll and perform and not clean and not connect:
         print "[COLL] Performance testing on resource", resource
         if "TMPDIR" not in os.environ:

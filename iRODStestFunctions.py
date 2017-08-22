@@ -102,7 +102,7 @@ def createEnvJSON(uname, host, zone, auth="PAM", ssl="none"):
 
     # Do an iinit to cache the password
     print "%sCaching password.%s" %(GREEN, DEFAULT) 
-    subprocess.call(["iinit"], shell=True)
+    #subprocess.call(["iinit"], shell=True)
     subprocess.call(["ienv"], shell=True)
     print "%sSUCCESS iRODS environment setup.%s" %(GREEN, DEFAULT)
 
@@ -134,7 +134,7 @@ def iRODSput(iresource, source, idestination):
     source:     path to local file to upload, must be a file, accepts absolut and relative paths
     idestination:   iRODS destination, accepts absolut and relative collection paths
     """
-    p = subprocess.Popen(["time iput -r -K -f -R "+iresource+" "+source+" "+idestination],
+    p = subprocess.Popen(["time iput -r -b -K -f -R "+iresource+" "+source+" "+idestination],
         shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out, err = p.communicate()
@@ -148,7 +148,7 @@ def iRODSget(iresource, isource, destination):
     source:     path to local destination file, must be a file, accepts absolut and relative paths
     idestination:   iRODS source, accepts absolut and relative collection paths
     """
-    p = subprocess.Popen(["time iget -r -K -f -R "+iresource+" "+isource+" "+destination],
+    p = subprocess.Popen(["time iget -r -b -K -f -R "+iresource+" "+isource+" "+destination],
         shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out, err = p.communicate()
@@ -199,7 +199,7 @@ def cleanUp(collections = ["CONNECTIVITY0", "PERFORMANCE0", "PERFORMANCEC0"],
 
     print "%sClean up finished. %s" %(GREEN, DEFAULT)
 
-def connectivity(iresource, data=os.environ["HOME"]+"/testdata/sample100M.txt"):
+def connectivity(iresource, data=os.environ["HOME"]+"/testdata/sample100M.txt_0"):
     """
     Tests the conectivity to iresource with a 100MB file, checking port 1247 and the data ports.
     iresource:  iRODS resource
@@ -219,7 +219,7 @@ def connectivity(iresource, data=os.environ["HOME"]+"/testdata/sample100M.txt"):
 
     print "iput -f -K -R iresource", data, collection+"/sample100M.txt"    
     date = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    out, err, elapsed = iRODSput(iresource, data, collection+"/sample100M.txt")
+    err, out, elapsed, _, _ = iRODSput(iresource, data, collection+"/sample100M.txt")
 
     if err.startswith("ERROR"):
         print "%s" %(RED), err, "%s" %(DEFAULT)
