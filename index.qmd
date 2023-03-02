@@ -1,0 +1,8 @@
+---
+title: "Python framework for iRODS performance tests"
+---
+
+# iRODS tests
+
+- [Synopsis](docs/intro.qmd)
+- [Usage](docs/usage.qmd)

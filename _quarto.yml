@@ -1,0 +1,17 @@
+project:
+  type: website
+  output-dir: ./_html
+
+website:
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: docs/intro.qmd
+        text: Introduction
+
+format:
+  html:
+    theme: cosmo
+    css: _styles/styles.css
+    toc: true
