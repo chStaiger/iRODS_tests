@@ -1,1 +1,1 @@
-Sitemap: https://chStaiger.github.io/iRODS_tests/sitemap.xml
+Sitemap: https://github.com/chStaiger/iRODS_tests/sitemap.xml
