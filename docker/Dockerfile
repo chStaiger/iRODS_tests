@@ -1,40 +1,26 @@
-FROM centos:7
-LABEL description="Docker container iRODS 4.3.12 iCAT"
+FROM ubuntu:18.04
 
-RUN yum -y install epel-release wget curl nc which
-RUN rpm --import https://packages.irods.org/irods-signing-key.asc \
- && wget --no-check-certificate -qO - https://packages.irods.org/renci-irods.yum.repo | tee /etc/yum.repos.d/renci-irods.yum.repo
-RUN yum -y install irods-server irods-database-plugin-postgres \
- && useradd -d /var/lib/irods irods \
- && yum clean all \
- && rm -rf /var/cache/yum/* \
- && rm -rf /tmp/*
-RUN yum -y install sudo
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update
+RUN apt-get -y upgrade
+RUN apt-get -y install wget sudo lsb-release netcat
+RUN apt install -y vim gnupg2  
+RUN apt-get -y install postgresql
 
-ENV IRODS_ADMIN_USER=irods
-ENV IRODS_ADMIN_PASS=test123
-ENV IRODS_ZONE_NAME=testZone
-ENV IRODS_ZONE_KEY=TEMPORARY_zone_key
-ENV IRODS_ZONE_PORT=1247
-ENV IRODS_NEGOTIATION_KEY=TEMPORARY_32byte_negotiation_key
-ENV IRODS_ICAT_DBSERVER=icat-db
-ENV IRODS_ICAT_DBPORT=5432
-ENV IRODS_ICAT_DBNAME=ICAT
-ENV IRODS_ICAT_DBUSER=irods
-ENV IRODS_ICAT_DBPASS=test123
-ENV IRODS_CONTROLPLANE_PORT=1248
-ENV IRODS_CONTROLPLANE_KEY=TEMPORARY__32byte_ctrl_plane_key
-ENV IRODS_DATA_PORT_RANGE_BEG=20000
-ENV IRODS_DATA_PORT_RANGE_END=20199
+RUN wget -qO - https://packages.irods.org/irods-signing-key.asc | sudo apt-key add -
+RUN echo "deb [arch=amd64] https://packages.irods.org/apt/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/renci-irods.list
+RUN apt update
 
-COPY genresp.sh docker-entrypoint.sh irods_login.sh /
-RUN chmod +x /genresp.sh /docker-entrypoint.sh /irods_login.sh
+RUN apt-get -y install irods-runtime=4.2.12-1~bionic
+RUN apt-get -y install irods-icommands=4.2.12-1~bionic
+RUN apt-get -y install irods-server=4.2.12-1~bionic
+RUN apt-get -y install irods-database-plugin-postgres=4.2.12-1~bionic
 
-## data volumes
-VOLUME "/etc/irods" "/var/lib/irods/iRODS/server/log" "/var/lib/irods/Vault"
+COPY ICAT.sql /tmp/
+RUN service postgresql start &&\
+    psql -f /tmp/ICAT.sql
+RUN exit
 
-EXPOSE $IRODS_ZONE_PORT $IRODS_CONTROLPLANE_PORT $IRODS_DATA_PORT_RANGE_BEG-$IRODS_DATA_PORT_RANGE_END
 
-## entrypoint
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["irods"]
+CMD ["bash"]
+#docker build --platform linux/amd64 -t irods:v2 -f Dockerfile .
