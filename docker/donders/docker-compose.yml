@@ -1,0 +1,34 @@
+version: '2'
+
+services:
+
+  icat-db:
+     platform: "linux/amd64"
+     environment:
+        POSTGRES_PASSWORD: postgres_password
+     build: ./postgres
+#     restart: unless-stopped
+     expose:
+       - "5432"
+
+  irods-icat:
+    platform: "linux/amd64"
+    build: ./irods-icat
+    hostname: irods-icat
+    restart: unless-stopped
+    volumes:
+      - /dev/urandom:/dev/random
+        #      - demo-irods-icat-config:/etc/irods
+        #      - demo-irods-icat-logs:/var/lib/irods/iRODS/server/log
+    environment:
+      - IRODS_ICAT_DBSERVER=icat-db
+      - IRODS_ZONE_PORT=1247
+      - IRODS_ZONE_NAME=demo
+        #      - IRODS_WEBDAV_HOST=irods-webdav
+        #      - IRODS_RESOURCE_OL=irods-resc-ol
+        #      - IRODS_RESOURCE_NL=irods-resc-nl
+    ports:
+      - 1247:1247
+      - 20000-20199:20000-20199
+    depends_on:
+      - icat-db

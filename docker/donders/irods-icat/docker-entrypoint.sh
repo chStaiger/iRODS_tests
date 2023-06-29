@@ -25,7 +25,8 @@ if [ "$1" == "irods" ]; then
 
         echo "provisioning iRODS ..."
         /genresp.sh /response.txt
-
+        cat /response.txt
+        sleep 15
         cat /response.txt | python /var/lib/irods/scripts/setup_irods.py
 
         cp /var/lib/irods/.irods/irods_environment.json /etc/irods/irods_environment.json
@@ -65,4 +66,12 @@ if [ "$1" == "irods" ]; then
     sleep infinity
 fi
 
+if [ "$1" == "bash" ]; then
+
+    # Wait for postgres to become available
+    while ! nc -w 1 ${IRODS_ICAT_DBSERVER} ${IRODS_ICAT_DBPORT} &> /dev/null; do          echo "waiting for database server ${IRODS_ICAT_DBSERVER} ..."
+        sleep 5
+    done
+    sleep infinity
+fi
 exec "$@"

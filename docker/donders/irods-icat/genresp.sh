@@ -1,3 +1,9 @@
+#!/bin/bash
+
+# genresp.sh
+# Generates responses for iRODS' setup_irods.sh script.
+# Zone SID, agent key, database admin, and admin password are all randomized.
+
 RESPFILE=$1
 
 SCHEMA_URI="file:///var/lib/irods/configuration_schemas" 
